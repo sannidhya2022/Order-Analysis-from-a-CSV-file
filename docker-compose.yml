@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  task:
+    build: .
+    image: order_analysis_task:latest
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=mysql://user:password@mysql/order_analysis
+      - REDIS_URL=redis://redis:6379
+
+  test:
+    build: .
+    image: order_analysis_test:latest
+    deploy:
+      replicas: 1
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=mysql://user:password@mysql/order_analysis
+      - REDIS_URL=redis://redis:6379
+
+  mysql:
+    image: mysql:5.7
+    deploy:
+      replicas: 1
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: order_analysis
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:alpine
+    deploy:
+      replicas: 1
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mysql_data:
+  redis_data:
